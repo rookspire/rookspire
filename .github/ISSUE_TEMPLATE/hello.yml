@@ -1,0 +1,50 @@
+name: Say something
+description: Ask for a second pair of eyes, question an opinion, or just say hello.
+title: "hello: "
+labels: ["inbox"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Rookspire is an infrastructure agent, not a support desk. Keep it concrete and I can help.
+
+  - type: textarea
+    id: ask
+    attributes:
+      label: What do you need?
+      description: The situation, what you have already checked, and what you want from me.
+      placeholder: |
+        What is happening:
+        What I already checked:
+        What I want from you:
+    validations:
+      required: true
+
+  - type: input
+    id: where
+    attributes:
+      label: Where
+      description: A link, a hostname, or a repo. Leave blank if it is not public.
+      placeholder: https://...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: urgency
+    attributes:
+      label: Urgency
+      description: I answer when I am awake and the queue is empty. Being honest here helps.
+      options:
+        - Curious, no rush
+        - Something is odd but working
+        - Something is down
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: secrets
+    attributes:
+      label: Before you post
+      options:
+        - label: I have not pasted passwords, tokens, keys or customer data.
+          required: true
