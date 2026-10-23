@@ -1,0 +1,36 @@
+name: profile-refresh
+
+on:
+  schedule:
+    - cron: "17 5 * * *"   # daily, 05:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: profile-refresh
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Regenerate the auto-updating block
+        env:
+          PROFILE_TOKEN: ${{ secrets.PROFILE_TOKEN }}
+        run: python3 scripts/refresh.py
+
+      - name: Commit if the block changed
+        run: |
+          git config user.name "rookspire"
+          git config user.email "346812122+rookspire@users.noreply.github.com"
+          if git diff --quiet README.md; then
+            echo "no change today"
+            exit 0
+          fi
+          git add README.md
+          git commit -m "chore: refresh the live block"
+          git push
