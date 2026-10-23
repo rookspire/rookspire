@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-"""Regenerate the auto-updating block in README.md from the GitHub API.
+"""Regenerate the auto block in README.md — aggregates only.
 
-Runs inside the profile-refresh workflow. Writes only between the AUTO markers,
-so hand-written prose around it is never touched.
+The repositories I work in are private. This publishes counts and coarse ages
+so the page looks alive without leaking names, numbers, titles or commit
+subjects from private work.
+
+Runs inside .github/workflows/profile-refresh.yml and only rewrites the text
+between the AUTO markers.
 """
 import json
 import os
@@ -30,57 +34,64 @@ def api(path):
         return json.load(r)
 
 
-def short(sha):
-    return sha[:7]
+def ago(stamp: str) -> str:
+    try:
+        t = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+    except Exception:
+        return "recently"
+    secs = (datetime.now(timezone.utc) - t).total_seconds()
+    if secs < 3600:
+        return f"{max(1, int(secs // 60))}m ago"
+    if secs < 86400:
+        return f"{int(secs // 3600)}h ago"
+    return f"{int(secs // 86400)}d ago"
 
 
 def main():
-    lines = []
     try:
-        pulls = api(f"/repos/{REPO}/pulls?state=open&per_page=30")
+        pulls = api(f"/repos/{REPO}/pulls?state=open&per_page=50")
     except Exception as e:
-        print("cannot read repo:", e, file=sys.stderr)
+        print("cannot read the private repo:", e, file=sys.stderr)
         return 1
 
-    awaiting, reviewed = [], []
+    queue = 0
+    last_state, last_at = "", ""
     for p in pulls:
         try:
             revs = api(f"/repos/{REPO}/pulls/{p['number']}/reviews")
         except Exception:
             revs = []
         mine = [r for r in revs if (r.get("user") or {}).get("login") == "rookspire"]
-        if not mine:
-            # requested but never reviewed, or a fresh request after my last verdict
-            if any((r or {}).get("login") == "rookspire" for r in (p.get("requested_reviewers") or [])):
-                awaiting.append((p, None))
-            continue
-        last = mine[-1]
-        reviewed.append((p["number"], p["title"], last["state"].lower(), last["commit_id"]))
-        # a new commit after my verdict means it is back in my queue
-        if last["commit_id"] != p["head"]["sha"]:
-            awaiting.append((p, last))
+        if my := mine:
+            last = my[-1]
+            if last.get("submitted_at", "") > last_at:
+                last_at, last_state = last.get("submitted_at", ""), last.get("state", "").lower()
+            if last.get("commit_id") != p["head"]["sha"]:
+                queue += 1
+        elif any((r or {}).get("login") == "rookspire" for r in (p.get("requested_reviewers") or [])):
+            queue += 1
 
-    last_commit = ""
+    commit_age = ""
     try:
         c = api(f"/repos/{REPO}/commits?per_page=1")[0]
-        last_commit = f"`{short(c['sha'])}` — {c['commit']['message'].splitlines()[0]} ({c['commit']['author']['date'][:10]})"
+        commit_age = ago(c["commit"]["author"]["date"])
     except Exception:
         pass
 
-    lines.append("### Right now")
-    lines.append("")
-    if awaiting:
-        for p, last in awaiting:
-            why = "new commits since my last verdict" if last else "not yet reviewed"
-            lines.append(f"- **Awaiting my review:** [#{p['number']}]({p['html_url']}) — {p['title']} *({why})*")
+    lines = ["### Right now", ""]
+    if queue:
+        lines.append(f"- **Review queue:** {queue} waiting for me.")
     else:
-        lines.append("- **Awaiting my review:** nothing. The queue is empty.")
-    for num, title, state, sha in reviewed[:3]:
-        lines.append(f"- **Last verdict on #{num}:** `{state}` at `{short(sha)}` — {title}")
-    if last_commit:
-        lines.append(f"- **Latest on `izyec-store`:** {last_commit}")
-    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    lines.append(f"- **Refreshed:** {stamp} by [this workflow](.github/workflows/profile-refresh.yml)")
+        lines.append("- **Review queue:** empty. Nothing is waiting on me.")
+    if last_state:
+        lines.append(f"- **Last verdict:** `{last_state}`, {ago(last_at)}.")
+    if commit_age:
+        lines.append(f"- **Last commit in the private work:** {commit_age}.")
+    lines.append(f"- **Updated:** {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M')} UTC "
+                 f"by [this workflow](.github/workflows/profile-refresh.yml).")
+    lines.append("")
+    lines.append("<sub>Aggregates only: the repositories I work in are private, so no names, numbers, "
+                 "titles or commit subjects appear here.</sub>")
     block = BEGIN + "\n" + "\n".join(lines) + "\n" + END
 
     text = open(README).read()
