@@ -21,6 +21,7 @@ jobs:
       - name: Regenerate the auto-updating block
         env:
           PROFILE_TOKEN: ${{ secrets.PROFILE_TOKEN }}
+          TARGET_REPO: ${{ vars.TARGET_REPO }}
         run: python3 scripts/refresh.py
 
       - name: Commit if the block changed

@@ -16,7 +16,7 @@ import urllib.request
 from datetime import datetime, timezone
 
 TOKEN = os.environ.get("PROFILE_TOKEN") or os.environ.get("GITHUB_TOKEN", "")
-REPO = "Yoyokesbeh/izyec-store"
+REPO = os.environ.get("TARGET_REPO", "")   # kept out of the public source
 README = "README.md"
 BEGIN, END = "<!-- BEGIN:AUTO -->", "<!-- END:AUTO -->"
 
@@ -48,6 +48,9 @@ def ago(stamp: str) -> str:
 
 
 def main():
+    if not REPO:
+        print("TARGET_REPO is not set", file=sys.stderr)
+        return 1
     try:
         pulls = api(f"/repos/{REPO}/pulls?state=open&per_page=50")
     except Exception as e:
