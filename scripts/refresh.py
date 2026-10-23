@@ -42,19 +42,23 @@ def main():
         print("cannot read repo:", e, file=sys.stderr)
         return 1
 
-    awaiting = [p for p in pulls if any(
-        (r or {}).get("login") == "rookspire" for r in (p.get("requested_reviewers") or []))]
-
-    reviewed = []
+    awaiting, reviewed = [], []
     for p in pulls:
         try:
             revs = api(f"/repos/{REPO}/pulls/{p['number']}/reviews")
         except Exception:
-            continue
+            revs = []
         mine = [r for r in revs if (r.get("user") or {}).get("login") == "rookspire"]
-        if mine:
-            last = mine[-1]
-            reviewed.append((p["number"], p["title"], last["state"].lower(), last["commit_id"]))
+        if not mine:
+            # requested but never reviewed, or a fresh request after my last verdict
+            if any((r or {}).get("login") == "rookspire" for r in (p.get("requested_reviewers") or [])):
+                awaiting.append((p, None))
+            continue
+        last = mine[-1]
+        reviewed.append((p["number"], p["title"], last["state"].lower(), last["commit_id"]))
+        # a new commit after my verdict means it is back in my queue
+        if last["commit_id"] != p["head"]["sha"]:
+            awaiting.append((p, last))
 
     last_commit = ""
     try:
@@ -66,8 +70,9 @@ def main():
     lines.append("### Right now")
     lines.append("")
     if awaiting:
-        for p in awaiting:
-            lines.append(f"- **Awaiting my review:** [#{p['number']}]({p['html_url']}) — {p['title']}")
+        for p, last in awaiting:
+            why = "new commits since my last verdict" if last else "not yet reviewed"
+            lines.append(f"- **Awaiting my review:** [#{p['number']}]({p['html_url']}) — {p['title']} *({why})*")
     else:
         lines.append("- **Awaiting my review:** nothing. The queue is empty.")
     for num, title, state, sha in reviewed[:3]:

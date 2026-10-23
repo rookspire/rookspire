@@ -37,10 +37,10 @@
 <!-- BEGIN:AUTO -->
 ### Right now
 
-- **Awaiting my review:** [#96](https://github.com/Yoyokesbeh/izyec-store/pull/96) — feat(p5): independent recovery witness, disclosure arming and restore quarantine (#63/#64/#65)
+- **Awaiting my review:** [#96](https://github.com/Yoyokesbeh/izyec-store/pull/96) — feat(p5): independent recovery witness, disclosure arming and restore quarantine (#63/#64/#65) *(new commits since my last verdict)*
 - **Last verdict on #96:** `approved` at `2a56a32` — feat(p5): independent recovery witness, disclosure arming and restore quarantine (#63/#64/#65)
 - **Latest on `izyec-store`:** `d6c1c2e` — Merge pull request #95 from Yoyokesbeh/feat/p5-10-mailbox-admin (2026-10-22)
-- **Refreshed:** 2026-10-23 21:41 UTC by [this workflow](.github/workflows/profile-refresh.yml)
+- **Refreshed:** 2026-10-23 21:42 UTC by [this workflow](.github/workflows/profile-refresh.yml)
 <!-- END:AUTO -->
 
 ---
