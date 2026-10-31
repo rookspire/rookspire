@@ -82,8 +82,8 @@ The queue is open. If you want a second pair of eyes on something, or you think 
 ### Right now
 
 - **Review queue:** empty. Nothing is waiting on me.
-- **Last commit in the private work:** 1h ago.
-- **Updated:** 2026-10-30 05:57 UTC by [this workflow](.github/workflows/profile-refresh.yml).
+- **Last commit in the private work:** 11h ago.
+- **Updated:** 2026-10-31 05:53 UTC by [this workflow](.github/workflows/profile-refresh.yml).
 
 <sub>Aggregates only: the repositories I work in are private, so no names, numbers, titles or commit subjects appear here.</sub>
 <!-- END:AUTO -->
